@@ -1,0 +1,208 @@
+# GSP315 - **Perform Foundational Infrastructure Tasks in Google Cloud: laboratório com desafio**
+
+
+
+# Definir variáveis do laboratório
+
+### Ative o Google Cloud Shell
+
+:
+
+
+A definição da variável é feita através do comando export . Copie o valor de cada credencial e cole após o sinal de igual, substituindo o texto **em vermelho**  na variável correspondente.
+
+Definindo a variável do **Bucket**.
+
+------------
+export BUCKET_NAME=BUCKET_NAME
+---------
+
+Copie o valor do comando export acima ⬆️ cole no Cloud Shell e pressione Enter ↲ para executar.
+
+Repita a operação acima para as demais variáveis.
+
+Definindo o nome da variável Topic Name (Cloud **Pub/Sub)**
+---------
+export TOPIC_NAME=**TOPIC_NAME**
+---------
+
+Definindo o nome da variável **Cloud Function Name**
+---------
+export CLOUDFUNCTION_NAME=**CLOUD_FUNCTION_NAME**
+---------
+
+Definindo o nome da variável  **Username2** 
+---------
+export USERNAME2=**USERNAME2**
+---------
+
+Definindo o nome da variável **Project_ID**
+---------
+export PROJECT_ID=**PROJECT_ID**
+---------
+
+
+# **Tarefa 1: crie um bucket**
+
+Você precisa criar um bucket com o nome BUCKET_NAME para armazenar as fotos.
+
+### 1.1 Criar Bucket
+
+Para criar o bucket use o comando `[gsutil mb](https://cloud.google.com/storage/docs/gsutil/commands/mb)` (Make Bucket) utilizando a variável $BUCKET_NAME que teve seu valor definido no início deste laboratório.
+
+Atenção com a grafia , verificar letras maiúsculas e minúsculas
+
+A linha de comando terá a estrutura definida abaixo, em que:
+
+- **`$BUCKET_NAME`** é a variável que contém o nome que você quer dar ao bucket, sujeito a [requisitos de nomenclatura](https://cloud.google.com/storage/docs/naming-buckets). Por exemplo, `my-bucket`.
+
+---------
+	gsutil mb gs://$**BUCKET_NAME**
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+**Listar os buckets em um projeto**
+
+
+---------
+gcloud alpha storage ls --project=$**PROJECT_ID**
+---------
+
+ **`$PROJECT_ID`** é a variável que contem o ID do projeto em que os buckets estão.
+
+
+# Tarefa 2: crie um tópico do Pub/Sub
+
+### 2.1 Crie um tópico do Pub/Sub
+
+Crie um tópico do Pub/Sub com o nome  (TOPIC_NAME) para que a função do Cloud envie mensagens.
+
+
+A linha de comando terá a estrutura definida abaixo, em que:
+
+- **`$TOPIC_NAME`** é a variável que contém o nome que você quer dar ao tópico.
+---------
+gcloud pubsub topics create $TOPIC_NAME
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+### 2.2 Listar tópicos
+
+
+---------
+gcloud pubsub topics list
+---------
+
+
+### 2.3 Verificar Progresso
+
+
+# Tarefa 3: crie a miniatura da função do Cloud
+
+
+
+
+---------
+wget https://github.com/guys-in-the-cloud/cloud-skill-boosts/raw/main/Challenge-labs/Perform%20Foundational%20Infrastructure%20Tasks%20in%20Google%20Cloud:%20Challenge%20Lab/index.js
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+### 3.2 Substituir variável
+
+Devemos trocar o valor padrão que está no arquivo **index.js** pelo valor da variável do laboratório, para isso vamos substituir a variável REPLACE_WITH_YOUR_TOPIC ID pela variável TOPIC_NAME que contém o valor do laboratório.
+---------
+sed -i "s/REPLACE_WITH_YOUR_TOPIC ID/$TOPIC_NAME/g" index.js
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar.
+
+
+### 3.3 Utilizar o comando [wget](https://github.com/GoogleCloudPlatform/cloud-builders/blob/master/wget/README.md) para baixar o arquivo **Package.json**
+---------
+wget https://github.com/guys-in-the-cloud/cloud-skill-boosts/raw/main/Challenge-labs/Perform%20Foundational%20Infrastructure%20Tasks%20in%20Google%20Cloud:%20Challenge%20Lab/package.json
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+
+### 3.4 Para criar uma Função do Cloud ([Deploy)](https://cloud.google.com/sdk/gcloud/reference/deploy)
+
+Após baixar e configurar os arquivos, devemos criar um tópico do Pub/Sub chamado thumbnail substituindo dentro do BUCKET_NAME que já foi criado:
+
+---------
+gcloud functions deploy $CLOUDFUNCTION_NAME \
+    --entry-point thumbnail \
+    --runtime nodejs14 \
+    --trigger-bucket $BUCKET_NAME \
+    --region us-east1
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+O comando pode demorar vários minutos para ser executado, aguarde a sua conclusão, para prosseguir.
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/c3b6c499-4c01-4a09-82e9-ca7cc7f199d8/Untitled.png)
+
+🚨 **Caso ocorra erro na execução**
+---------
+gcloud functions deploy $CLOUDFUNCTION_NAME \
+--entry-point thumbnail \
+--runtime **nodejs12** \
+--trigger-bucket $BUCKET_NAME \
+--region **us-east1**
+---------
+
+🚨 Verifique no laboratório o nome da região (region) e a versão do nodejs que estão especificados e substitua-os no código acima e execute-o novamente.
+
+### 3.5 **Faça upload de um objeto no seu bucket**
+
+
+Agora faça upload de um objeto em um bucket.  É necessário fazer upload de uma imagem JPG ou PNG para o bucket. Após a função ser criada, confirmaremos a criação da miniatura.
+
+Primeiro faça o download da imagem para uma instância temporária (map.jpg) no Cloud Shell.
+
+O comando wget deve ser utilizado para realizar o download do arquivo 
+
+---------
+wget --output-document map.jpg https://storage.googleapis.com/cloud-training/gsp315/map.jpg
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+
+Use o comando `gsutil cp` para copiar a imagem da instância temporária  em que você a salvou e enviá-la para o novo bucket.
+---------
+gsutil cp map.jpg gs://$BUCKET_NAME
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+### 3.6 Verificar Progresso
+
+
+
+# **Tarefa 4: remova o engenheiro de nuvem anterior**
+
+
+
+### 4.1 Remover acesso
+
+Por segurança, remova o acesso do engenheiro de nuvem anterior ao projeto.
+---------
+gcloud projects remove-iam-policy-binding $DEVSHELL_PROJECT_ID \
+    --member=user:$USERNAME2 --role=roles/viewer
+---------
+
+Copie o código acima ⬆️ cole no Shell e pressione **Enter ↲** para executar
+
+
+
+### 4.2 Verificar Progresso
