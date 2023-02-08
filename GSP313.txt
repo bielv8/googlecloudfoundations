@@ -1,0 +1,116 @@
+GSP313 - Create and Manage Cloud Resources: laboratório com desafio
+
+Conhecimentos avaliados:
+
+- Criar uma instância
+- Criar um cluster do Kubernetes com três nós e executar um serviço simples
+- Criar um balanceador de carga HTTP(S) na frente de dois servidores da Web
+
+-------Digite o código para criar uma VM----
+
+----“Substitua o termo em ***nucleus-jumphost-471*** pelo que foi apresentado no seu laboratório:”-----
+
+gcloud compute instances create nucleus-jumphost-471 --machine-type f1-micro --zone us-east1-b
+
+
+-----digite o seguinte comando no cloud Shell para criar os clusters------
+
+gcloud container clusters create --machine-type=e2-medium lab-cluster --zone us-east1-b
+
+---------Digite o seguinte comando para incluir a imagem---------
+
+kubectl create deployment hello-server --image=[gcr.io/google-samples/hello-app:2.0]
+
+---------Digite o comando para definir a porta ao load balancer, verifique se sua porta é a 8080, caso não mude---------
+
+kubectl expose deployment hello-server --type=LoadBalancer --port 8080
+
+---------Digite o comando:-------------
+
+kubectl get service
+
+---------Etapa 3: Criar um balanceador de carga HTTP(S)-------------
+----------Executar o código da Quest para instalar o servidor Web nginx:----------
+
+cat << EOF > startup.sh
+#! /bin/bash
+apt-get update
+apt-get install -y nginx
+service nginx start
+sed -i -- 's/nginx/Google Cloud Platform - '"\$HOSTNAME"'/' /var/www/html/index.nginx-debian.html
+EOF
+
+-------Digite o código para criar um template da Instância:-----------
+
+gcloud compute instance-templates create web-server-template \
+--metadata-from-file startup-script=startup.sh \
+--network default \
+--machine-type f1-micro \
+--region us-east1
+
+---------Digite o Código para criar um grupo de instâncias:-----------
+
+gcloud compute instance-groups managed create web-server-group \
+--base-instance-name web-server \
+--size 2 \
+--template web-server-template \
+--region us-east1
+
+--------------Digite o código para criar as regras de Firewall:---------------
+-------Substitua accept-tcp-rule-154 pelo fornecido no seu laboratório---------------
+
+
+gcloud compute firewall-rules create accept-tcp-rule-154 \
+--allow tcp:80 \
+--network default
+
+--------------Digite o código para criar o HTTP Básico:-----------------------
+
+
+gcloud compute http-health-checks create http-basic-check
+
+--------------Digite o código para criar as instâncias de grupo gerenciadas:--------------
+
+
+gcloud compute instance-groups managed \
+set-named-ports web-server-group \
+--named-ports http:80 \
+--region us-east1
+
+
+---------------Digite o código para criar um servidor web Backend:-----------------------
+
+gcloud compute backend-services create web-server-backend \
+--protocol HTTP \
+--http-health-checks http-basic-check \
+--global
+
+--------------Digite o código para adicionar o Backend------------------------------
+
+gcloud compute backend-services add-backend web-server-backend \
+--instance-group web-server-group \
+--instance-group-region us-east1 \
+--global
+
+----------------Digite o código para criar um servidor WEB---------------------
+
+
+gcloud compute url-maps create web-server-map \
+--default-service web-server-backend
+
+----------Digite o código para criar o HTTP-------------------------
+
+gcloud compute target-http-proxies create http-lb-proxy \
+--url-map web-server-map
+
+-------------Digite o código para criar a Rule-------------------
+-------Substitua accept-tcp-rule-154 pelo fornecido no seu laboratório---------------
+
+gcloud compute forwarding-rules create accept-tcp-rule-980 \
+--global \
+--target-http-proxy http-lb-proxy \
+--ports 80
+
+---------Digite o código para computar a lista de regras----------
+
+gcloud compute forwarding-rules list
